@@ -1,0 +1,15 @@
+const CACHE='zflbf-44c45202b9';
+const FILES=['./','index.html','li.woff','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('zflbf-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{
+  const r=e.request; if(r.method!=='GET') return;
+  const u=new URL(r.url);
+  if(u.origin===location.origin){
+    e.respondWith(caches.match(r,{ignoreSearch:true}).then(m=>m||fetch(r).catch(()=>r.mode==='navigate'?caches.match('index.html'):Response.error())));
+  } else if(/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)){
+    e.respondWith(caches.open('zflbf-fonts').then(c=>c.match(r).then(m=>{
+      const f=fetch(r).then(res=>{c.put(r,res.clone());return res}).catch(()=>m);
+      return m||f;})));
+  }
+});
