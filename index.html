@@ -27,13 +27,13 @@
   --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --fs:21px;
   /* five colours for the neighbouring paragraphs */
-  --c-gray:#7b847f;--c-blue:#3b6aa8;--c-green:#3c8459;--c-brown:#93662c;--c-plum:#94466a;
+  --c-ochre:#9c4a3a;--c-gray:#7b847f;--c-blue:#3b6aa8;--c-green:#3c8459;--c-brown:#93662c;--c-plum:#94466a;
   --ctx:var(--c-gray);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#121614;--surface:#1a1f1c;--ink:#e6e9e3;--mute:#98a29c;--line:#2b322e;--accent:#d9a443;--accent-ink:#1a1408;--done:#5cc28e;--redo:#ee9156;--chip:#232a26;--mask:#38413c;--c-gray:#8f9893;--c-blue:#86aee6;--c-green:#7cc79d;--c-brown:#d6a66a;--c-plum:#dc93b6;color-scheme:dark}}
+  --bg:#121614;--surface:#1a1f1c;--ink:#e6e9e3;--mute:#98a29c;--line:#2b322e;--accent:#d9a443;--accent-ink:#1a1408;--done:#5cc28e;--redo:#ee9156;--chip:#232a26;--mask:#38413c;--c-ochre:#e08a72;--c-gray:#8f9893;--c-blue:#86aee6;--c-green:#7cc79d;--c-brown:#d6a66a;--c-plum:#dc93b6;color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121614;--surface:#1a1f1c;--ink:#e6e9e3;--mute:#98a29c;--line:#2b322e;--accent:#d9a443;--accent-ink:#1a1408;--done:#5cc28e;--redo:#ee9156;--chip:#232a26;--mask:#38413c;--c-gray:#8f9893;--c-blue:#86aee6;--c-green:#7cc79d;--c-brown:#d6a66a;--c-plum:#dc93b6;color-scheme:dark}
+  --bg:#121614;--surface:#1a1f1c;--ink:#e6e9e3;--mute:#98a29c;--line:#2b322e;--accent:#d9a443;--accent-ink:#1a1408;--done:#5cc28e;--redo:#ee9156;--chip:#232a26;--mask:#38413c;--c-ochre:#e08a72;--c-gray:#8f9893;--c-blue:#86aee6;--c-green:#7cc79d;--c-brown:#d6a66a;--c-plum:#dc93b6;color-scheme:dark}
 [hidden]{display:none!important}
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -73,6 +73,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #read h2{font-family:var(--serif);font-weight:600;font-size:calc(var(--fs) * .9);color:var(--accent);margin:0 0 12px;text-wrap:balance}
 #text{font-family:var(--tf,var(--serif));font-weight:var(--tw,400);font-size:var(--fs);line-height:var(--lh,1.95);letter-spacing:.04em;margin:0;text-align:justify;text-indent:2em}
 #text .s{border-radius:4px;transition:background .15s,color .15s}
+.hintbar{display:flex;gap:8px;align-items:flex-start;margin:6px 0 10px;padding:8px 10px;border-radius:10px;background:var(--chip);color:var(--hc);font-family:var(--sans);font-size:15px;line-height:1.7;letter-spacing:.02em;font-weight:500}
+.hintbar svg{flex:none;width:18px;height:18px;margin-top:4px}
+.hintbar .hl{font-weight:700;margin-right:4px}
+.hintbar .hg{white-space:nowrap}
+.hintbar .hs{opacity:.55;margin:0 2px}
+.tools .bulb{flex:0 0 44px}
+.tools .bulb svg{width:20px;height:20px}
 #text.masked .s.h{color:transparent;background:var(--mask);cursor:pointer}
 .sign{text-align:right;font-family:var(--serif);color:var(--mute);margin-top:14px;font-size:calc(var(--fs)*.85)}
 .hint{color:var(--mute);font-size:12px;text-align:center;margin-top:18px}
@@ -182,6 +189,7 @@ textarea#bk{width:100%;min-height:120px;font-size:12px;border:1px solid var(--li
   </header>
 
   <main class="view gut" id="read">
+    <div class="hintbar" id="hintBar" hidden></div>
     <div id="page">
       <button class="ctx prev" id="ctxPrev" hidden><small></small><span class="clip"><span class="t"></span></span></button>
       <div class="curp">
@@ -204,6 +212,7 @@ textarea#bk{width:100%;min-height:120px;font-size:12px;border:1px solid var(--li
         <button class="timer" id="bTimer" aria-label="暫停或繼續計時"><span id="tIcon" style="font-size:12px;font-weight:500">計時</span><span id="tVal">0:00</span></button>
         <button id="bRedo">忘了・重背</button>
         <button id="bMask" aria-pressed="false">遮字</button>
+        <button class="bulb" id="bHint" aria-pressed="false" aria-label="提示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg></button>
       </div>
       <div class="nav gut">
         <button id="bPrev" aria-label="前一段">‹ 前一段</button>
@@ -256,7 +265,7 @@ const hm=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${Stri
 // ---------- state ----------
 // meta: settings and position. log[docKey][pid] = [[startMs, seconds, kind]] kind 1=背會 0=忘了重背
 const LS='zflbf.v1';
-let S={meta:{pass:1,cur:P[0].id,font:21,mask:false,auto:true,wake:false,face:'li',lh:1.95,fx:'slide',ctx:true,ctxColor:'gray',theme:'system',autobk:false,lastBk:''},log:{}};
+let S={meta:{pass:1,cur:P[0].id,font:21,mask:false,auto:true,wake:false,face:'li',lh:1.95,fx:'slide',ctx:true,ctxColor:'gray',hint:false,hintPos:'top',hintColor:'ochre',theme:'system',autobk:false,lastBk:''},log:{}};
 // scripture typefaces: device font first where a familiar one exists, then the web font
 const FACES={
   li:{name:'隸書體',ff:'"MoeLi","Noto Serif TC",serif',w:400},
@@ -268,6 +277,7 @@ function applyLook(){
   const f=FACES[S.meta.face], r=document.documentElement;
   r.style.setProperty('--tf',f.ff); r.style.setProperty('--tw',f.w); r.style.setProperty('--fs',S.meta.font+'px'); r.style.setProperty('--lh',S.meta.lh||1.95);
   r.style.setProperty('--ctx',`var(--c-${S.meta.ctxColor||'gray'})`);
+  r.style.setProperty('--hc',`var(--c-${S.meta.hintColor||'ochre'})`);
   if(S.meta.theme==='light'||S.meta.theme==='dark') r.setAttribute('data-theme',S.meta.theme); else r.removeAttribute('data-theme');
 }
 try{const raw=localStorage.getItem(LS); if(raw){const o=JSON.parse(raw); if(o&&o.meta) S={meta:Object.assign(S.meta,o.meta),log:o.log||{}};}}catch(e){}
@@ -440,6 +450,27 @@ function renderCtx(){
     el.querySelector('.t').textContent=q.text;
   });
 }
+const BULB_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>';
+function firstChars(t){
+  const out=[];
+  sentences(t).forEach(s=>{const m=s.match(/[\u3400-\u9fffA-Za-z0-9\uff21-\uff3a\uff41-\uff5a\uff10-\uff19]/);if(m) out.push(m[0])});
+  return out;
+}
+function renderHint(){
+  const bar=$('hintBar'), on=!!S.meta.hint, p=P[cur];
+  $('bHint').setAttribute('aria-pressed',String(on));
+  const pg=$('page');
+  if(S.meta.hintPos==='bottom'){ if(bar.previousElementSibling!==pg) pg.after(bar); }
+  else if(bar.nextElementSibling!==pg) pg.before(bar);
+  bar.hidden=!on; if(!on) return;
+  const cs=firstChars(p.text), groups=[];
+  for(let i=0;i<cs.length;i+=3) groups.push(cs.slice(i,i+3).join(' - '));
+  const lb=(p.lec===0?label(p):'段落'+label(p))+`（${cs.length}句）：`;
+  bar.innerHTML=BULB_SVG+'<span><span class="hl"></span><span class="hb"></span></span>';
+  bar.querySelector('.hl').textContent=lb;
+  const hb=bar.querySelector('.hb');
+  groups.forEach((g,i)=>{ if(i){const s=document.createElement('span');s.className='hs';s.textContent=' / ';hb.appendChild(s)} const e=document.createElement('span');e.className='hg';e.textContent=g;hb.appendChild(e)});
+}
 function renderRead(){
   const p=P[cur], st=status(p.id);
   $('cLec').textContent=p.lecObj.short;
@@ -465,8 +496,10 @@ function renderRead(){
   const ok=$('bOk'); ok.classList.toggle('again',st.k==='done'); ok.textContent=st.k==='done'?'✓ 再背一次':'✓ 背會了';
   document.documentElement.style.setProperty('--fs',S.meta.font+'px');
   renderCtx();
+  renderHint();
   tick();
 }
+$('bHint').onclick=()=>{S.meta.hint=!S.meta.hint;metaDirty=true;S.meta.updated=Date.now();schedule();renderHint()};
 $('ctxPrev').onclick=()=>go(+$('ctxPrev').dataset.i);
 $('ctxNext').onclick=()=>go(+$('ctxNext').dataset.i);
 $('text').addEventListener('click',e=>{
@@ -639,6 +672,10 @@ function renderSet(){
   <div class="opt"><div><b>顯示前後段對照</b><small>在本段上下各顯示前一段末 3 行、後一段開頭 3 行</small></div><button class="sw" id="swCtx" role="switch" aria-checked="${m.ctx!==false}"></button></div>
   <div class="opt col"><div><b>前後段文字顏色</b></div>
     <div class="seg colors" id="ctxSeg" style="--n:5">${[['gray','灰'],['blue','藍'],['green','綠'],['brown','棕'],['plum','紫紅']].map(([k,n])=>`<button data-k="${k}" aria-pressed="${(m.ctxColor||'gray')===k}" style="color:var(--c-${k})">● ${n}</button>`).join('')}</div></div>
+  <div class="opt col"><div><b>提示位置</b><small>用燈泡按鈕開關；每句第一個字組成提示</small></div>
+    <div class="seg" id="hpSeg" style="--n:2"><button data-k="top" aria-pressed="${(m.hintPos||'top')==='top'}">上方</button><button data-k="bottom" aria-pressed="${m.hintPos==='bottom'}">下方</button></div></div>
+  <div class="opt col"><div><b>提示文字顏色</b></div>
+    <div class="seg colors" id="hcSeg" style="--n:5">${[['ochre','赭紅'],['gray','灰'],['blue','藍'],['green','綠'],['plum','紫紅']].map(([k,n])=>`<button data-k="${k}" aria-pressed="${(m.hintColor||'ochre')===k}" style="color:var(--c-${k})">● ${n}</button>`).join('')}</div></div>
   <div class="opt"><div><b>打勾後自動到下一段</b><small>關閉則停在原段，可再背一次</small></div><button class="sw" id="swAuto" role="switch" aria-checked="${m.auto}"></button></div>
   <div class="opt"><div><b>螢幕保持常亮</b><small>背誦時不自動關螢幕（手機支援才有效）</small></div><button class="sw" id="swWake" role="switch" aria-checked="${m.wake}"></button></div>
   <div class="opt"><div><b>目前是第 ${m.pass} 遍</b><small>開新的一遍，進度從頭算；舊紀錄會保留</small></div><button class="btn" id="newPass">開始第 ${m.pass+1} 遍</button></div>
@@ -656,7 +693,7 @@ function renderSet(){
     $('faceSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
   const segPick=(id,key,after)=>{$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;m[key]=b.dataset.k;applyLook();touch();
     $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));after&&after()}};
-  segPick('fxSeg','fx'); segPick('ctxSeg','ctxColor');
+  segPick('fxSeg','fx'); segPick('ctxSeg','ctxColor'); segPick('hpSeg','hintPos',renderHint); segPick('hcSeg','hintColor');
   $('swCtx').onclick=e=>{m.ctx=!(m.ctx!==false);e.target.setAttribute('aria-checked',m.ctx);touch()};
   $('themeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;m.theme=b.dataset.k;applyLook();touch();
     $('themeSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
