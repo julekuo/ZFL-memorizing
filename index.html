@@ -73,7 +73,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #read h2{font-family:var(--serif);font-weight:600;font-size:calc(var(--fs) * .9);color:var(--accent);margin:0 0 12px;text-wrap:balance}
 #text{font-family:var(--tf,var(--serif));font-weight:var(--tw,400);font-size:var(--fs);line-height:var(--lh,1.95);letter-spacing:.04em;margin:0;text-align:justify;text-indent:2em}
 #text .s{border-radius:4px;transition:background .15s,color .15s}
-.hintbar{display:flex;gap:8px;align-items:flex-start;margin:6px 0 10px;padding:8px 10px;border-radius:10px;background:var(--chip);color:var(--hc);font-family:var(--sans);font-size:15px;line-height:1.7;letter-spacing:.02em;font-weight:500}
+.fc{font-weight:inherit}
+:root[data-fcb] #text .fc{font-weight:900}
+.hintbar{flex:none;max-height:26vh;overflow-y:auto;display:flex;gap:8px;align-items:flex-start;padding-top:8px;padding-bottom:8px;border-bottom:1px solid var(--line);background:var(--chip);color:var(--hc);font-family:var(--sans);font-size:15px;line-height:1.7;letter-spacing:.02em;font-weight:500}
 .hintbar svg{flex:none;width:18px;height:18px;margin-top:4px}
 .hintbar .hl{font-weight:700;margin-right:4px}
 .hintbar .hg{white-space:nowrap}
@@ -188,8 +190,9 @@ textarea#bk{width:100%;min-height:120px;font-size:12px;border:1px solid var(--li
     <div class="meta"><span class="pid" id="cId"></span><span id="cSn"></span><span class="pill" id="cSt"></span><span id="cTime"></span></div>
   </header>
 
+  <div class="hintbar gut" id="hintBar" hidden></div>
+
   <main class="view gut" id="read">
-    <div class="hintbar" id="hintBar" hidden></div>
     <div id="page">
       <button class="ctx prev" id="ctxPrev" hidden><small></small><span class="clip"><span class="t"></span></span></button>
       <div class="curp">
@@ -265,7 +268,7 @@ const hm=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${Stri
 // ---------- state ----------
 // meta: settings and position. log[docKey][pid] = [[startMs, seconds, kind]] kind 1=背會 0=忘了重背
 const LS='zflbf.v1';
-let S={meta:{pass:1,cur:P[0].id,font:21,mask:false,auto:true,wake:false,face:'li',lh:1.95,fx:'slide',ctx:true,ctxColor:'gray',hint:false,hintPos:'top',hintColor:'ochre',theme:'system',autobk:false,lastBk:''},log:{}};
+let S={meta:{pass:1,cur:P[0].id,font:21,mask:false,auto:true,wake:false,face:'li',lh:1.95,fx:'slide',ctx:true,ctxColor:'gray',hint:false,hintPos:'top',hintColor:'ochre',fcBold:false,theme:'system',autobk:false,lastBk:''},log:{}};
 // scripture typefaces: device font first where a familiar one exists, then the web font
 const FACES={
   li:{name:'隸書體',ff:'"MoeLi","Noto Serif TC",serif',w:400},
@@ -277,6 +280,7 @@ function applyLook(){
   const f=FACES[S.meta.face], r=document.documentElement;
   r.style.setProperty('--tf',f.ff); r.style.setProperty('--tw',f.w); r.style.setProperty('--fs',S.meta.font+'px'); r.style.setProperty('--lh',S.meta.lh||1.95);
   r.style.setProperty('--ctx',`var(--c-${S.meta.ctxColor||'gray'})`);
+  r.toggleAttribute('data-fcb',!!S.meta.fcBold);
   r.style.setProperty('--hc',`var(--c-${S.meta.hintColor||'ochre'})`);
   if(S.meta.theme==='light'||S.meta.theme==='dark') r.setAttribute('data-theme',S.meta.theme); else r.removeAttribute('data-theme');
 }
@@ -451,18 +455,18 @@ function renderCtx(){
   });
 }
 const BULB_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>';
+const FC_RE=/[\u3400-\u9fffA-Za-z0-9\uff21-\uff3a\uff41-\uff5a\uff10-\uff19]/;
 function firstChars(t){
   const out=[];
-  sentences(t).forEach(s=>{const m=s.match(/[\u3400-\u9fffA-Za-z0-9\uff21-\uff3a\uff41-\uff5a\uff10-\uff19]/);if(m) out.push(m[0])});
+  sentences(t).forEach(s=>{const m=s.match(FC_RE);if(m) out.push(m[0])});
   return out;
 }
 function renderHint(){
   const bar=$('hintBar'), on=!!S.meta.hint, p=P[cur];
   $('bHint').setAttribute('aria-pressed',String(on));
-  const pg=$('page');
-  if(S.meta.hintPos==='bottom'){ if(bar.previousElementSibling!==pg) pg.after(bar); }
-  else if(bar.nextElementSibling!==pg) pg.before(bar);
-  bar.hidden=!on; if(!on) return;
+  if(S.meta.hintPos==='bottom'){ const d=document.querySelector('footer.dock'); if(bar.nextElementSibling!==d) d.before(bar); bar.style.borderBottom='0'; bar.style.borderTop='1px solid var(--line)'; }
+  else { const h=$('top'); if(bar.previousElementSibling!==h) h.after(bar); bar.style.borderTop='0'; bar.style.borderBottom='1px solid var(--line)'; }
+  bar.hidden=!on||view!=='read'; if(bar.hidden) return;
   const cs=firstChars(p.text), groups=[];
   for(let i=0;i<cs.length;i+=3) groups.push(cs.slice(i,i+3).join(' - '));
   const lb=(p.lec===0?label(p):'段落'+label(p))+`（${cs.length}句）：`;
@@ -488,7 +492,7 @@ function renderRead(){
   // in mask mode every sentence is tappable: tap once to show, tap again to hide
   tx.classList.toggle('masked',maskOn);
   const hideAll=maskOn&&!revealAll;
-  sentences(p.text).forEach(s=>{const sp=document.createElement('span');sp.className='s'+(hideAll?' h':'');sp.textContent=s;tx.appendChild(sp)});
+  sentences(p.text).forEach(s=>{const sp=document.createElement('span');sp.className='s'+(hideAll?' h':'');const k=s.search(FC_RE);if(k<0) sp.textContent=s; else {sp.append(s.slice(0,k));const f=document.createElement('span');f.className='fc';f.textContent=s[k];sp.append(f,s.slice(k+1))} tx.appendChild(sp)});
   const sg=$('sign'); const lastOfSec=p.pn===p.secObj.count&&p.secObj.sign;
   sg.hidden=!lastOfSec; if(lastOfSec) sg.textContent=p.secObj.sign.replace('李洪志','李洪志　');
   maskLabel();
@@ -567,7 +571,7 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>show(b.datase
 function show(v){
   view=v; $('toast').hidden=true;
   ['read','toc','stats','set'].forEach(x=>$(x).hidden=x!==v);
-  $('readDock').hidden=v!=='read'; $('top').hidden=v!=='read';
+  $('readDock').hidden=v!=='read'; $('top').hidden=v!=='read'; if(v!=='read') $('hintBar').hidden=true;
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   if(v==='toc') renderToc(); if(v==='stats') renderStats(); if(v==='set') renderSet(); if(v==='read') renderRead();
 }
@@ -676,6 +680,7 @@ function renderSet(){
     <div class="seg" id="hpSeg" style="--n:2"><button data-k="top" aria-pressed="${(m.hintPos||'top')==='top'}">上方</button><button data-k="bottom" aria-pressed="${m.hintPos==='bottom'}">下方</button></div></div>
   <div class="opt col"><div><b>提示文字顏色</b></div>
     <div class="seg colors" id="hcSeg" style="--n:5">${[['ochre','赭紅'],['gray','灰'],['blue','藍'],['green','綠'],['plum','紫紅']].map(([k,n])=>`<button data-k="${k}" aria-pressed="${(m.hintColor||'ochre')===k}" style="color:var(--c-${k})">● ${n}</button>`).join('')}</div></div>
+  <div class="opt"><div><b>句首字粗體</b><small>每個句子的第一個字加粗（與提示、遮字的分句一致），方便判斷句子開頭</small></div><button class="sw" id="swFc" role="switch" aria-checked="${!!m.fcBold}"></button></div>
   <div class="opt"><div><b>打勾後自動到下一段</b><small>關閉則停在原段，可再背一次</small></div><button class="sw" id="swAuto" role="switch" aria-checked="${m.auto}"></button></div>
   <div class="opt"><div><b>螢幕保持常亮</b><small>背誦時不自動關螢幕（手機支援才有效）</small></div><button class="sw" id="swWake" role="switch" aria-checked="${m.wake}"></button></div>
   <div class="opt"><div><b>目前是第 ${m.pass} 遍</b><small>開新的一遍，進度從頭算；舊紀錄會保留</small></div><button class="btn" id="newPass">開始第 ${m.pass+1} 遍</button></div>
@@ -694,6 +699,7 @@ function renderSet(){
   const segPick=(id,key,after)=>{$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;m[key]=b.dataset.k;applyLook();touch();
     $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));after&&after()}};
   segPick('fxSeg','fx'); segPick('ctxSeg','ctxColor'); segPick('hpSeg','hintPos',renderHint); segPick('hcSeg','hintColor');
+  $('swFc').onclick=e=>{m.fcBold=!m.fcBold;e.target.setAttribute('aria-checked',m.fcBold);applyLook();touch()};
   $('swCtx').onclick=e=>{m.ctx=!(m.ctx!==false);e.target.setAttribute('aria-checked',m.ctx);touch()};
   $('themeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;m.theme=b.dataset.k;applyLook();touch();
     $('themeSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
