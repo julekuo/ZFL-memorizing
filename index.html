@@ -73,6 +73,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #read h2{font-family:var(--serif);font-weight:600;font-size:calc(var(--fs) * .9);color:var(--accent);margin:0 0 12px;text-wrap:balance}
 #text{font-family:var(--tf,var(--serif));font-weight:var(--tw,400);font-size:var(--fs);line-height:var(--lh,1.95);letter-spacing:.04em;margin:0;text-align:justify;text-indent:2em}
 #text .s{border-radius:4px;transition:background .15s,color .15s}
+.ver{text-align:center;color:var(--mute);font-size:12px;margin:14px 0 24px;font-variant-numeric:tabular-nums}
 .fc{font-weight:inherit}
 :root[data-fcb] #text .fc{font-weight:900}
 .hintbar{flex:none;max-height:26vh;overflow-y:auto;display:flex;gap:8px;align-items:flex-start;padding-top:8px;padding-bottom:8px;border-bottom:1px solid var(--line);background:var(--chip);color:var(--hc);font-family:var(--sans);font-size:15px;line-height:1.7;letter-spacing:.02em;font-weight:500}
@@ -691,7 +692,8 @@ function renderSet(){
   <div class="opt"><div><b>還原</b><small>選擇之前匯出的備份檔，會與現有紀錄合併</small></div><label class="btn" style="display:inline-flex;align-items:center">匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
   <textarea id="bk" hidden readonly></textarea>
   <p class="sync" id="syncState"></p>
-  <div class="brand"><img alt="背法" src="${document.querySelector('link[rel=icon]').href}"><div><b>轉法輪背法</b><small>經文：《轉法輪》論語及第一至九講，共 ${TOTAL} 段；頁碼依 2015 年版原書。隸書字型：教育部隸書。</small></div></div>`;
+  <div class="brand"><img alt="背法" src="${document.querySelector('link[rel=icon]').href}"><div><b>轉法輪背法</b><small>經文：《轉法輪》論語及第一至九講，共 ${TOTAL} 段；頁碼依 2015 年版原書。隸書字型：教育部隸書。</small></div></div>
+  <p class="ver">版本 V-20261026：edbc70b69d</p>`;
   syncLabel();
   const touch=()=>{metaDirty=true;m.updated=Date.now();schedule()};
   $('faceSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;m.face=b.dataset.k;applyLook();touch();
