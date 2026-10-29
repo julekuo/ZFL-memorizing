@@ -382,16 +382,25 @@ function autoBackup(){
 // ---------- timer ----------
 let T={pid:null,start:0,acc:0,run:null}; let hiddenAt=null;
 const elapsed=()=>T.acc+(T.run?Date.now()-T.run:0);
-function resetTimer(pid){T={pid,start:Date.now(),acc:0,run:Date.now()}; tick();}
+const TLS='zflbf.timer.v1';
+function saveTimer(){ try{ localStorage.setItem(TLS,JSON.stringify({pid:T.pid,start:T.start,acc:Math.round(elapsed()),running:!!T.run,at:Date.now()})) }catch(e){} }
+function restoreTimer(pid){
+  try{ const o=JSON.parse(localStorage.getItem(TLS)||'null');
+    if(o&&o.pid===pid&&o.acc>=0&&o.start){ T={pid,start:o.start,acc:o.acc,run:o.running?Date.now():null}; tick(); return true; } }catch(e){}
+  return false;
+}
+function resetTimer(pid){T={pid,start:Date.now(),acc:0,run:Date.now()}; tick(); saveTimer();}
 function tick(){
   $('tVal').textContent=fmt(elapsed()/1000);
   $('tIcon').textContent=T.run?'計時':'已暫停';
   $('bTimer').classList.toggle('paused',!T.run);
 }
 setInterval(()=>{ if(!$('read').hidden) tick(); },500);
-$('bTimer').onclick=()=>{ if(T.run){T.acc+=Date.now()-T.run;T.run=null}else{T.run=Date.now()} tick(); };
+setInterval(saveTimer,2000);
+addEventListener('pagehide',saveTimer);
+$('bTimer').onclick=()=>{ if(T.run){T.acc+=Date.now()-T.run;T.run=null}else{T.run=Date.now()} tick(); saveTimer(); };
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){hiddenAt=Date.now(); releaseWake();}
+  if(document.hidden){hiddenAt=Date.now(); releaseWake(); saveTimer();}
   else{
     if(hiddenAt&&T.run&&Date.now()-hiddenAt>30*60*1000){T.acc+=hiddenAt-T.run;T.run=null;tick();toast('離開超過 30 分鐘，計時已自動暫停');}
     hiddenAt=null; if(S.meta.wake) wake();
@@ -693,7 +702,7 @@ function renderSet(){
   <textarea id="bk" hidden readonly></textarea>
   <p class="sync" id="syncState"></p>
   <div class="brand"><img alt="背法" src="${document.querySelector('link[rel=icon]').href}"><div><b>轉法輪背法</b><small>經文：《轉法輪》論語及第一至九講，共 ${TOTAL} 段；頁碼依 2015 年版原書。隸書字型：教育部隸書。</small></div></div>
-  <p class="ver">版本 V-20261026：edbc70b69d</p>`;
+  <p class="ver">版本 V-20261029：05bf37cb69</p>`;
   syncLabel();
   const touch=()=>{metaDirty=true;m.updated=Date.now();schedule()};
   $('faceSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;m.face=b.dataset.k;applyLook();touch();
@@ -739,7 +748,8 @@ function maxPass(){let m=1;for(const k in S.log){const x=+k.match(/^p(\d+)/)[1];
 
 // ---------- boot ----------
 applyLook();
-resetTimer(P[cur].id); renderRead(); if(S.meta.wake) wake();
+if(!restoreTimer(P[cur].id)) resetTimer(P[cur].id);
+renderRead(); if(S.meta.wake) wake();
 })();
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script></body></html>
